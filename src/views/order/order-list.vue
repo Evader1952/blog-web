@@ -1,713 +1,401 @@
 <template>
     <div class="box">
         <Breadcrumb>
-            <BreadcrumbItem>交易管理</BreadcrumbItem>
-            <BreadcrumbItem>交易列表</BreadcrumbItem>
+            <BreadcrumbItem>系统管理</BreadcrumbItem>
+            <BreadcrumbItem>测试列表</BreadcrumbItem>
         </Breadcrumb>
         <div class="form-box">
-            <div class="search">
-                <Input clearable v-model="query.outTradeNo" placeholder="输入订单号" style="width: 150px" @on-clear="beginSearch(0)"/>&nbsp;&nbsp;
-                <Input clearable v-model="query.outOrderNo" placeholder="输入外部订单号" style="width: 150px" @on-clear="beginSearch(0)"/>&nbsp;&nbsp;
-                <Input clearable v-model="query.wayId" placeholder="输入渠道编码" style="width: 150px" @on-clear="beginSearch(0)"/>&nbsp;&nbsp;
-                <Input clearable v-model="query.sellerNo" placeholder="输入收款账号" style="width: 200px" @on-clear="beginSearch(0)"/>&nbsp;&nbsp;
-                <Input clearable v-model="query.phoneNumber" placeholder="输入办理手机号" style="width: 150px" @on-clear="beginSearch(0)"/>&nbsp;&nbsp;
-                <DatePicker type="daterange" v-model="dateRange" style="width: 150px"></DatePicker>&nbsp;&nbsp;
-                <Select v-model="query.state" clearable style="width: 150px; margin-right: 10px" placeholder="请选择交易状态">
-                    <Option v-for="item in stateList" :value="item.value" :key="item.value">{{ item.label }}</Option>
-                </Select>
-                <Select v-model="query.dealState" clearable style="width: 150px; margin-right: 10px" placeholder="请选择操作状态">
-                    <Option v-for="item in settleList" :value="item.value" :key="item.value">{{ item.label }}</Option>
-                </Select>
-                <Select v-model="query.bizType" clearable style="width: 150px; margin-right: 10px" placeholder="请选择业务类型">
-                    <Option v-for="item in bizTypeList" :value="item.value" :key="item.value">{{ item.label }}</Option>
-                </Select>
-                <Select v-model="query.city" clearable style="width: 150px; margin-right: 10px" placeholder="请选择地区">
-                    <Option v-for="item in areaList" :value="item.code" :key="item.code">{{ item.name }}</Option>
-                </Select>
-                <Button slot="append" icon="ios-search" @click="beginSearch(0)">搜索</Button>&nbsp;&nbsp;
-                <Button type="primary" @click="excelExport">导出到文件管理</Button>&nbsp;&nbsp;
-            </div>
             <div class="list">
+                <Button type="primary" class="tab-right" @click="addRole = true">添加</Button>&nbsp;&nbsp;
                 <Table size="small" :columns="columns" :data="list">
-                    <template slot-scope="{ row }" slot="action">
+                    <template slot-scope="{ row, index }" slot="action" >
+                        <Button type="primary" size="small" style="width: 60px;margin-right: 15px" @click="roleEdit(row)">修改</Button>
+                        <Button type="primary" size="small" style="width: 60px" @click="unfreeze(row)" v-if="row.state==0">解冻</Button>
+                        <Button type="primary" size="small" style="width: 60px" @click="freeze(row)" v-else>冻结</Button>
                     </template>
                 </Table>
             </div>
-
-            <div class="Page">
-                <Page class-name="page" size="small" :total="page.total" :page-size="page.count" @on-change="changePage" />
-            </div>
-            <Modal v-model="exportModal" title="数据导出">
-                <p slot="header" style="color:#000000;text-align:center">
-                    数据导出
-                </p>
-                <p style="margin: 3px 0px">导出内容：订单列表</p>
-                <p v-if="query.wayId !=null" style="margin: 3px 0px">渠道编码：{{query.wayId}}</p>
-                <p v-if="query.name !=null" style="margin: 3px 0px">收款人:{{query.name}}</p>
-                <p v-if="query.sellerNo !=null" style="margin: 3px 0px">收款账号：{{query.sellerNo}}</p>
-                <p v-if="query.phoneNumber !=null" style="margin: 3px 0px">办理手机号：{{query.phoneNumber}}</p>
-                <p style="margin: 3px 0px">开始时间：{{query.startTime}}</p>
-                <p style="margin: 3px 0px">结束时间：{{query.endTime}}</p>
-                <p style="margin: 3px 0px">加密字段：
-                    <CheckboxGroup  v-model="hidden" @on-change="checkAllGroupChange" style="height: 18px;text-align: left;width:85%;float: right;margin-top: -2px;">
-                        <Checkbox label="hiddenPhone" style="margin-left: -10px">办理手机号</Checkbox>
-                        <Checkbox label="hiddenSellerNo" style="margin-left: 20px">收款账户</Checkbox>
-                        <Checkbox label="hiddenSellerName" style="margin-left: 20px">收款人</Checkbox>
-                    </CheckboxGroup>
-                </p>
-                <p style="margin: 3px 0px">导出规则： 导出任务创建后，会保留在任务列表中，10分钟后自动删除，请及时下载。</p>
-                <div slot="footer">
-                    <Button type="default" @click="exportModal = false">取消</Button>
-                    <Button type="primary" @click="submitExport">创建导出任务</Button>
-                </div>
-            </Modal>
         </div>
+
+
+
+        <div class="Page">
+            <Page class-name="page" size="small" :current="page.pageNum" :total="page.total" :page-size="page.count"  @on-change="changePage" />
+        </div>
+
+        <modal v-model="addRole" :mask-closable="false" :closable="false" :loading="modalLoading" title="新增角色权限" @on-cancel="cancelRoleAdd" @on-ok="roleAdd">
+            <div>
+                <Form label-position="left" :label-width="100" style="margin-left: 30px">
+                    <FormItem label="收支类型：">
+                        <RadioGroup v-model="chosenOrder" @on-change="changeModel" type="button">
+                            <Radio v-for="item in typeList" :label="item.label" :key="item.value"></Radio>
+                        </RadioGroup>
+                    </FormItem>
+                    <FormItem label="角色名称：">
+                        <Input type="text" v-model="name" style="width: 300px" placeholder="请输入角色名称"/>
+                    </FormItem>
+                    <FormItem label="角色备注：">
+                        <Input type="text" v-model="remark" style="width: 300px" placeholder="请输入角色备注"/>
+                    </FormItem>
+
+                    <!--<FormItem label="角色权限配置：">-->
+                        <!--<Tree :data="data1" :load-data="loadData" style="margin-top: -7px" @on-check-change="getChooseds" show-checkbox ref="tree1"></Tree>-->
+                    <!--</FormItem>-->
+                </Form>
+            </div>
+        </modal>
+        <modal v-model="editRole" :mask-closable="false" :closable="false" :loading="modalLoading" title="修改角色权限" @on-cancel="cancelRole" @on-ok="editAdd">
+            <div>
+                <Form label-position="left" :label-width="100" style="margin-left: 30px">
+                    <FormItem label="角色名称：">
+                        <Input type="text" v-model="name" style="width: 300px" />
+                    </FormItem>
+                    <FormItem label="角色备注：">
+                        <Input type="text" v-model="remark" style="width: 300px" />
+                    </FormItem>
+                    <FormItem label="角色权限配置：">
+                        <Tree :data="data2" :load-data="loadData1" style="margin-top: -7px" @on-check-change="getChoosed" show-checkbox ref="tree"></Tree>
+                    </FormItem>
+                </Form>
+            </div>
+        </modal>
     </div>
 </template>
 
 <script>
-    import moment from 'moment';
-    import {batchExport, getAmountInfo, list, getAreaListByLevelOrParentCode} from "../../api/trade";
+    import {addRole, freezeRole, list, roleDetail, treeList, updateRole} from "../../api/role";
+
 
     export default {
-        name: "trade-list",
-        data() {
-            return {
-                hiddenPhone:false,
-                hiddenSellerNo:false,
-                hiddenSellerName:false,
-                selectExport:false,
-                hidden:['hiddenPhone','hiddenSellerNo','hiddenSellerName'],
-                dateRange: [],
-                areaList: [],
+        name: "roleList",
+        data(){
+            return{
+                typeList:[
+                    {
+                        label:'收入',
+                        value:'0'
+                    },{
+                        label:'支出',
+                        value:'1'
+                    }
+                ],
+                chosenOrder:'',
+                button4: '北京',
+                button5: '北京',
+                button6: '北京',
+                name:'',
+                remark:'',
+                authority:'',
+                addRole:false,
+                editRole:false,
+                modalLoading:true,
+                roleMenus:[],
                 columns: [
                     {
                         title: '序号',
-                        type: 'index',
-                        width: 60,
-                        align: 'center',
-                        fixed: 'left'
-                    },
-                    {
-                        title: '和商汇订单号',
-                        key: 'outOrderNo',
-                        width: 200,
-                        align: 'center',
-                        fixed: 'left'
-                    },
-                    {
-                        title: '业务类型',
-                        key: 'bizTypeDesc',
-                        width: 100,
-                        align: 'center'
-                    },
-                    {
-                        title: '授权订单号',
-                        key: 'authNo',
-                        width: 250,
-                        align: 'center'
-                    },
-                    {
-                        title: '办理手机',
-                        key: 'phoneNumber',
                         width: 120,
-                        align: 'center'
-                    },
-                    {
-                        title: '捆绑期数',
-                        key: 'num',
-                        width: 100,
-                        align: 'center'
-                    },
-                    {
-                        title: '冻结金额',
-                        key: 'amount',
-                        width: 100,
-                        align: 'center'
-                    },
-                    {
-                        title: '结算金额',
-                        key: 'settleAmount',
-                        width: 100,
-                        align: 'center'
-                    },
-                    {
-                        title: '返佣金额',
-                        key: 'rebate',
-                        width: 100,
-                        align: 'center'
-                    },
-                    {
-                        title: '红包金额',
-                        key: 'redPacketAmount',
-                        width: 100,
-                        align: 'center'
-                    },
-                    {
-                        title: '红包领取状态',
-                        key: 'redPacketStateDesc',
-                        width: 150,
-                        align: 'center'
-                    },
-                    {
-                        title: '红包领取账号',
-                        key: 'redPacketSellerNo',
-                        width: 200,
-                        align: 'center'
-                    },
-                    {
-                        title: '门店名称',
-                        key: 'storeName',
-                        width: 200,
-                        align: 'center'
-                    },
-                    {
-                        title: '渠道编码',
-                        key: 'wayId',
-                        width: 150
-                    },
-                    {
-                        title: '套餐标题',
-                        key: 'title',
-                        width: 200,
-                        tooltip: true,
-                        align: 'center'
-                    },
-                    {
-                        title: '收款账号',
-                        key: 'sellerNo',
-                        width: 150,
-                        tooltip: true,
-                        align: 'center'
-                    },
-                    {
-                        title: '收款人',
-                        key: 'name',
-                        width: 150,
-                        tooltip: true,
-                        align: 'center'
-                    },
-                    {
-                        title: '交易时间',
-                        key: 'createTime',
-                        width: 150,
-                        align: 'center'
-                    },
-                    {
-                        title: '结束时间',
-                        key: 'finishTime',
-                        width: 150,
-                        align: 'center'
-                    },
-                    {
-                        title: '当前状态',
-                        key: 'dealStateStr',
-                        width: 100,
-                        render: (h, params) => {
-                            return h('Tooltip', {
-                                props: { placement: 'top',transfer: true }
-                            }, [
-                                params.row.dealStateStr,
-                                h('div', { slot: 'content', style: { whiteSpace: 'normal', wordBreak: 'break-all' } },
-                                    [h('p',params.row.reason)])
-                            ])
+                        align: 'center',
+                        render: (h,params) => {
+                            return h('span', params.index + (this.page.pageNum -1) * this.page.count + 1)
                         }
                     },
                     {
-                        title: '订单状态',
-                        key: 'stateStr',
-                        width: 100,
+                        title: '角色名称',
+                        key: 'name',
+                        align: 'center'
+                    },
+                    {
+                        title: '备注',
+                        key: 'remark',
+                        tooltip: true,
+                        align: 'center'
+                    },
+                    {
+                        title: '绑定帐号数',
+                        key: 'count',
+
+                        align: 'center'
+                    },
+                    {
+                        title: '状态',
+                        key: 'stateDesc',
+                        width: 150,
+                        align: 'center',
+                    },
+                    {
+                        title: '操作',
+                        slot: 'action',
+                        width: 370,
                         align: 'center'
                     }
                 ],
-                list: [],
-                stateList: [
-                    {
-                        value: '',
-                        label: '全部状态'
-                    },
-                    {
-                        value: '0',
-                        label: '等待支付'
-                    },
-                    {
-                        value: '1',
-                        label: '交易成功'
-                    },
-                    {
-                        value: '2',
-                        label: '交易退款'
-                    },
-                    {
-                        value: '-1',
-                        label: '交易关闭'
-                    },
-                    {
-                        value: '3',
-                        label: '退款中'
-                    }
-                ],
-                settleList: [
-                    {
-                        value: '',
-                        label: '全部状态'
-                    },
-                    {
-                        value: '4',
-                        label: '等待通知'
-                    },
-                    {
-                        value: '0',
-                        label: '通知失败'
-                    },
-                    {
-                        value: '2',
-                        label: '等待打款'
-                    },
-                    {
-                        value: '1',
-                        label: '打款失败'
-                    },
-                    {
-                        value: '3',
-                        label: '当天签约'
-                    },
-                    {
-                        value: '5',
-                        label: '打款成功'
-                    },
-                    {
-                        value: '6',
-                        label: '还款成功'
-                    },
-                ],
-                bizTypeList: [
-                    {
-                        value: '',
-                        label: '全部'
-                    },
-                    {
-                        value: '1',
-                        label: '和分期'
-                    },
-                    {
-                        value: '2',
-                        label: '物联网卡'
-                    }
-                ],
-                refundinfo:{},
-                amountInfo:{},
-                exportModal: false,
-                query:{
-                },
-                loading:true,
-                confirmModal:false,
-                confirmTitle:"",
-                confirmContent:"",
-                type:null,
-                row:null,
+                list:[],
                 page: {
                     currentPage: 0,
                     count: 10,
-                    total: 0
+                    total: 0,
+                    pageNum:1,
                 },
-                refundModal: false,
+                data1: [
+                    {
+                        id:0,
+                        title: '所有权限',
+                        loading: false,
+                        children: []
+                    }
+                ],
+                data2: [
+                    {
+                        id:0,
+                        title: '所有权限',
+                        loading: false,
+                        children: []
+                    }
+                ],
+                data3: [
+                    {
+                        id:0,
+                        title: '所有权限',
+                        loading: false,
+                        children: []
+                    }
+                ],
 
             }
         },
-        mounted() {
-            this.getList(this.page.currentPage, this.page.count);
-            this.getAreaListByLevelOrParentCode();
+        mounted(){
+            this.getList(this.page.currentPage, this.page.count)
         },
-        methods: {
-            beginSearch(isSearch) {
-                if (isSearch == 0) {
-                    this.page.currentPage = 0
+        methods:{
+            reset(){
+                this.data2 = [];
+                let obj = new Object();
+                obj.id = 0;
+                obj.title = '所有权限';
+                obj.loading = false;
+                obj.children = [];
+                this.data2 .push(obj)
+            },
+            loadData (item, callback) {
+                treeList().then(result=>{
+                    if(result.code == 20000){
+                        this.treeDatas = result.data
+                    }
+                    const data = this.treeDatas
+                    // this.data1[0].children = this.treeData
+                    // this.data1 = this.treeData
+                    callback(data)
+                })
+            },
+            loadData1 (item, callback) {
+                roleDetail({'id':this.id}).then(result=>{
+                    if(result.code == 20000){
+                        this.treeData = result.data.treeList
+                    }
+                    const data = this.treeData
+                    callback(data)
+                })
+            },
+            cancelRoleAdd(){
+                this.name = '';
+                this.remark = '';
+                if(this.data1[0].expand == true){
+                    this.data1[0].expand = false;
                 }
-                this.getList(this.page.currentPage, this.page.count)
+                this.data1[0].checked = false;
+                this.data1[0].indeterminate = false;
+                this.getCheckedByFilter(this.data1[0].children)
+            },
+            cancelRole(){
+                this.name = '';
+                this.remark = '';
+                this.data2[0].children = [];
+                this.data2[0].indeterminate = false;
+                this.data2[0].checked = false;
+                this.reset()
+                //
+                // this.loadData1()
+                // // this.data2 = this.data3
+                // this.data1[0].expand = false;
+            },
+            roleEdit(row){
+                this.editRole = true
+                this.id = row.id
+                this.name = row.name
+                this.remark = row.remark
+                this.type = row.type
+                this.roleMenus = this.roleMenus
             },
             getList: async function (cp, c) {
                 let query = new Object()
                 query.page = cp;
                 query.limit = c;
-                if (this.query.outTradeNo){
-                    query.outTradeNo = this.query.outTradeNo;
-                }
-                if (this.query.outOrderNo){
-                    query.outOrderNo = this.query.outOrderNo;
-                }
-                if (this.query.state){
-                    query.state = this.query.state;
-                }
-                if (this.query.dealState){
-                    query.dealState = this.query.dealState;
-                }
-                if (this.query.bizType){
-                    query.bizType = this.query.bizType;
-                }
-                if (this.query.wayId){
-                    query.wayId = this.query.wayId;
-                }
-                if (this.query.sellerNo){
-                    query.sellerNo = this.query.sellerNo;
-                }
-                if (this.query.phoneNumber){
-                    query.phoneNumber = this.query.phoneNumber;
-                }
-                if (this.query.city){
-                    query.city = this.query.city;
-                }
-                if (this.dateRange[0] != '' && this.dateRange[1] != '') {
-                    query.startTime = moment(this.dateRange[0]).format('YYYY-MM-DD') + ' 00:00:00'
-                    query.endTime = moment(this.dateRange[1]).format('YYYY-MM-DD') + ' 23:59:59'
-                }
                 const result = await list(query)
                 if (result.code == 20000) {
                     this.list = result.data.content;
                     this.page.total = result.data.totalElements
-                    let type = null;
-                    if (this.list.length > 0 && this.list[0].type) {
-                        type = this.list[0].type
-                        if (type == 1) {
-                            this.columns = [
-                                {
-                                    title: '序号',
-                                    type: 'index',
-                                    width: 50,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '和商汇订单号',
-                                    key: 'outOrderNo',
-                                    width: 100,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '办理手机',
-                                    key: 'phoneNumber',
-                                    width: 90,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '捆绑期数',
-                                    key: 'num',
-                                    width: 60,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '冻结金额',
-                                    key: 'amount',
-                                    width: 80,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '结算金额',
-                                    key: 'settleAmount',
-                                    width: 80,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '红包金额',
-                                    key: 'redPacketAmount',
-                                    width: 70,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '交易时间',
-                                    key: 'createTime',
-                                    width: 100,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '当前状态',
-                                    key: 'dealStateStr',
-                                    width: 70,
-                                    render: (h, params) => {
-                                        return h('Tooltip', {
-                                            props: { placement: 'top',transfer: true }
-                                        }, [
-                                            params.row.dealStateStr,
-                                            h('div', { slot: 'content', style: { whiteSpace: 'normal', wordBreak: 'break-all' } },
-                                                [h('p',params.row.reason)])
-                                        ])
-                                    }
-                                },
-                                {
-                                    title: '订单状态',
-                                    key: 'stateStr',
-                                    width: 70,
-                                    align: 'center'
-                                },
-                                // {
-                                //     title: '红包领取状态',
-                                //     key: 'redPacketStateDesc',
-                                //     width: 80,
-                                //     align: 'center'
-                                // },
-                                // {
-                                //     title: '红包领取账号',
-                                //     key: 'redPacketSellerNo',
-                                //     width: 80,
-                                //     align: 'center'
-                                // },
-                                {
-                                    title: '门店名称',
-                                    key: 'storeName',
-                                    tooltip: true,
-                                    width: 100,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '渠道编码',
-                                    key: 'wayId',
-                                    width: 80
-                                },
-                                {
-                                    title: '套餐标题',
-                                    key: 'title',
-                                    tooltip: true,
-                                    width: 150,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '收款账号',
-                                    key: 'sellerNo',
-                                    width: 100,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '收款人',
-                                    key: 'name',
-                                    tooltip: true,
-                                    width: 80,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '授权订单号',
-                                    key: 'authNo',
-                                    width: 120,
-                                    tooltip: true,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '业务类型',
-                                    key: 'bizTypeDesc',
-                                    width: 80,
-                                    align: 'center'
-                                }
-                            ]
-                        } else if (type == 2) {
-                            this.columns = [
-                                {
-                                    title: '序号',
-                                    type: 'index',
-                                    width: 50,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '和商汇订单号',
-                                    key: 'outOrderNo',
-                                    width: 100,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '办理手机',
-                                    key: 'phoneNumber',
-                                    width: 90,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '捆绑期数',
-                                    key: 'num',
-                                    width: 60,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '冻结金额',
-                                    key: 'amount',
-                                    width: 80,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '结算金额',
-                                    key: 'settleAmount',
-                                    width: 80,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '返佣金额',
-                                    key: 'rebate',
-                                    width: 60,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '交易时间',
-                                    key: 'createTime',
-                                    width: 100,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '订单状态',
-                                    key: 'stateStr',
-                                    width: 70,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '当前状态',
-                                    key: 'dealStateStr',
-                                    width: 70,
-                                    render: (h, params) => {
-                                        return h('Tooltip', {
-                                            props: { placement: 'top',transfer: true }
-                                        }, [
-                                            params.row.dealStateStr,
-                                            h('div', { slot: 'content', style: { whiteSpace: 'normal', wordBreak: 'break-all' } },
-                                                [h('p',params.row.reason)])
-                                        ])
-                                    }
-                                },
-                                // {
-                                //     title: '红包金额',
-                                //     key: 'redPacketAmount',
-                                //     width: 60,
-                                //     align: 'center'
-                                // },
-                                {
-                                    title: '门店名称',
-                                    key: 'storeName',
-                                    width: 140,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '渠道编码',
-                                    key: 'wayId',
-                                    width: 100
-                                },
-                                {
-                                    title: '套餐标题',
-                                    key: 'title',
-                                    width: 150,
-                                    tooltip: true,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '收款账号',
-                                    key: 'sellerNo',
-                                    width: 100,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '收款人',
-                                    key: 'name',
-                                    width: 100,
-                                    tooltip: true,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '授权订单号',
-                                    key: 'authNo',
-                                    tooltip: true,
-                                    width: 120,
-                                    align: 'center'
-                                },
-                                {
-                                    title: '业务类型',
-                                    key: 'bizTypeDesc',
-                                    width: 80,
-                                    align: 'center'
-                                }
-                            ]
-                        }
-
-                    }
                 }
-            },
-            checkAllGroupChange(){
-                for(let i=0;i<this.hidden.length;i++){
-                    let name = this.hidden[i];
-                    this.query[name] = true;
-                }
-            },
-            exports(){
-                this.selectExport = true
             },
             changePage: function (cp) {
+                this.page.pageNum = cp
                 this.getList((cp - 1), this.page.count)
             },
-            //获取金额
-            getAmount: async function (outTradeNo) {
-                let oreder = new Object()
-                oreder.outTradeNo = outTradeNo;
-                const result = await getAmountInfo(oreder)
-                if (result.code == 20000) {
-                    this.amountInfo=result.data;
-                }
+            getCheckedByFilter(data){
+                data.map((arr)=>{
+                    arr.checked = false;
+                    arr.indeterminate = false;
+                    if(arr.children){
+                        this.getCheckedByFilter(arr.children)
+                    }
+                })
             },
-            submitExport: async function () {
+            freeze: async function (row) {
+                this.$Modal.confirm({
+                    title: '确认信息',
+                    content: '<h4>是否冻结当前角色</h4>',
+                    okText: '我已确认',
+                    cancelText: '取消',
+                    onOk: () => {
+                        freezeRole({'id':row.id,'type':row.type,'roleState':0,'roleMenuState':0}).then(result=>{
+                            if(result.code == 20000){
+                                this.getList(this.page.currentPage, this.page.count)
+                                this.$Message.success('冻结成功')
+                            }else {
+                                this.$Message.error(`${result.msg}`)
+                            }
+                        })
+                    },
+                })
+            },
+            unfreeze: async function (row) {
+                this.$Modal.confirm({
+                    title: '确认信息',
+                    content: '<h4>是否解冻当前角色</h4>',
+                    okText: '我已确认',
+                    cancelText: '取消',
+                    onOk: () => {
+                        freezeRole({'id':row.id,'type':row.type,'roleState':1,'roleMenuState':1}).then(result=>{
+                            if(result.code == 20000){
+                                this.getList(this.page.currentPage, this.page.count)
+                                this.$Message.success('解冻成功')
+                            }else {
+                                this.$Message.error(`${result.msg}`)
+                            }
+                        })
+                    },
+                })
+            },
+            roleAdd:async function(){
                 let query = new Object()
-                if (this.query.outTradeNo){
-                    query.outTradeNo = this.query.outTradeNo;
+                if(this.name){
+                    query.name = this.name
+                }else {
+                    this.$Message.error('请输入角色名称')
+                    this.cancelLoading()
+                    return
                 }
-                if (this.query.outOrderNo){
-                    query.outOrderNo = this.query.outOrderNo;
+                if(this.remark){
+                    query.remark = this.remark
+                }else {
+                    this.$Message.error('请输入角色备注')
+                    this.cancelLoading()
+                    return
                 }
-                if (this.query.state){
-                    query.state = this.query.state;
-                }
-                if (this.query.dealState){
-                    query.dealState = this.query.dealState;
-                }
-                if (this.query.bizType){
-                    query.bizType = this.query.bizType;
-                }
-                if (this.query.wayId){
-                    query.wayId = this.query.wayId;
-                }
-                if (this.query.sellerNo){
-                    query.sellerNo = this.query.sellerNo;
-                }
-                if (this.query.phoneNumber){
-                    query.phoneNumber = this.query.phoneNumber;
-                }
-                if (this.query.city){
-                    query.city = this.query.city;
-                }
-                if (this.dateRange[0] != '' && this.dateRange[1] != '') {
-                    query.startTime = moment(this.dateRange[0]).format('YYYY-MM-DD') + ' 00:00:00'
-                    query.endTime = moment(this.dateRange[1]).format('YYYY-MM-DD') + ' 23:59:59'
-                }
-                for(let i=0;i<this.hidden.length;i++){
-                    let name = this.hidden[i];
-                    query[name] = true;
-                }
-                const result = await batchExport(query)
-                this.exportModal=false;
+                query.roleMenus = JSON.stringify(this.roleMenus)
+                const result = await addRole(query)
                 if (result.code == 20000) {
-                    this.$Message.success(result.data)
-                } else {
-                    this.$Message.error(result.msg)
+                    this.getList(this.page.currentPage, this.page.count)
+                    this.$Message.success('添加成功')
+                    this.cancelLoading()
+                    this.addRole = false
+                    this.cancelRoleAdd()
+                }else {
+                    this.$Message.error(result.msg);
+                    this.cancelLoading()
+
+                }
+
+            },
+            getChooseds(){
+                let sourceNodeList = this.$refs.tree1.getCheckedAndIndeterminateNodes();
+                console.log("bb",sourceNodeList);
+                let roleDatas = [];
+
+                sourceNodeList.forEach((item)=>{
+                    if (item.id !==0 && item.type !== 0){
+                        console.log(item)
+                        let role = {};
+                        role.menuCode = item.code
+                        role.homeMenuCode = item.homeCode
+                        roleDatas.push(role);
+                    }
+                })
+                console.log('aa',roleDatas)
+                this.roleMenus = roleDatas
+                // console.log(this.roleMenus)
+            },
+            getChoosed(){
+                let sourceNodeList = this.$refs.tree.getCheckedAndIndeterminateNodes();
+                console.log("bb",sourceNodeList);
+                let roleDatas = [];
+
+                sourceNodeList.forEach((item)=>{
+                    if (item.id !==0 && item.type !== 0){
+                        console.log(item)
+                        let role = {};
+                        role.menuCode = item.code
+                        role.homeMenuCode = item.homeCode
+                        roleDatas.push(role);
+                    }
+                })
+                console.log('aa',roleDatas)
+                this.roleMenus = roleDatas
+                // console.log(this.roleMenus)
+            },
+            editAdd:async function(){
+                let query = new Object()
+                if(this.name){
+                    query.name = this.name
+                }else {
+                    this.$Message.error('角色名称不能为空')
+                    this.cancelLoading()
+                    return
+                }
+                if(this.remark){
+                    query.remark = this.remark
+                }else {
+                    this.$Message.error('角色备注不能为空')
+                    this.cancelLoading()
+                    return
+                }
+                query.type = this.type
+                query.id = this.id
+                if(this.roleMenus==''){
+                    this.roleMenus = []
+                }
+                query.roleMenus = JSON.stringify(this.roleMenus)
+                const result = await updateRole(query)
+                if (result.code == 20000) {
+                    this.$Message.success('修改成功')
+                    this.getList(this.page.currentPage, this.page.count)
+                    this.editRole = false
+                    this.cancelRole()
+                }else {
+                    this.$Message.error(result.msg);
+                    this.name = ''
+                    this.remark = ''
+                    this.roleMenus = ''
                 }
             },
-            excelExport: async function () {
-                if (this.dateRange[0] != '' && this.dateRange[1] !='') {
-                    this.query.startTime = moment(this.dateRange[0]).format('YYYY-MM-DD') + ' 00:00:00';
-                    this.query.endTime = moment(this.dateRange[1]).format('YYYY-MM-DD') + ' 23:59:59';
-                    this.exportModal = true;
-                }else{
-                    this.query.startTime =moment(new Date()).format('YYYY-MM-DD') + ' 00:00:00';
-                    this.query.endTime =moment(new Date()).format('YYYY-MM-DD') + ' 23:59:59';
-                    this.exportModal = true;
-                }
+            cancelLoading(){
+                this.modalLoading = false
+                setTimeout(() =>{
+                    this.$nextTick(() =>{
+                        this.modalLoading = true
+                    })
+                },100)
             },
-            getAreaListByLevelOrParentCode: async function() {
-                let query = new Object();
-                query.level = 2;
-                const result = await getAreaListByLevelOrParentCode(query);
-                if (result.code == 20000) {
-                    this.areaList = result.data;
-                }
-            }
-        }
+        },
     }
 </script>
 
@@ -716,17 +404,16 @@
         width 100%
         .form-box
             margin 20px
+            .tab-right
+                position absolute
+                right 40px
+                top 100px
+                z-index 99
+                width 60px
             .list
                 margin-top 20px
-                .image-style
-                    width 100px
-                    height 80px
-                    margin 5px
-                    .image-item
-                        width 100%
-                        height 100%
-                        border-radius 5px
-            .Page
-                text-align: center
-                padding: 20px
+        .Page
+            text-align: center
+            padding: 20px
+
 </style>

@@ -2,7 +2,7 @@
     <div class="password">
         <Breadcrumb>
             <BreadcrumbItem>系统管理</BreadcrumbItem>
-            <BreadcrumbItem>密码修改</BreadcrumbItem>
+            <BreadcrumbItem>修改密码</BreadcrumbItem>
         </Breadcrumb>
         <div class="list-box">
             <Row>

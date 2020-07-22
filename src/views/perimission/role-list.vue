@@ -1,8 +1,8 @@
 <template>
     <div class="box">
         <Breadcrumb>
-            <BreadcrumbItem>系统管理</BreadcrumbItem>
-            <BreadcrumbItem>角色管理</BreadcrumbItem>
+            <BreadcrumbItem>权限管理</BreadcrumbItem>
+            <BreadcrumbItem>XXX管理</BreadcrumbItem>
         </Breadcrumb>
         <div class="form-box">
             <div class="list">

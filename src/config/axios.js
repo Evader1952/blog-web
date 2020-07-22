@@ -7,7 +7,8 @@ import Router from "vue-router";
 Vue.use(Router);
 
 //自己测试环境访问地址，不要提交此配置文件
-const baseURL = 'http://prepay.ngrok.zanclick.cn'
+const baseURL = 'http://127.0.0.1:8888'
+//const baseURL ='http://blog-mp.utools.club'
 
 const myAxios = {
     post: async function (url, param) {

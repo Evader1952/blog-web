@@ -17,15 +17,11 @@ const method = {
         open: '/api/pay/manage/open'
     },
     trade:{
-        list:'/api/web/pay/order/list',
-        settle:'/api/web/pay/order/settle',
-        refund:'/api/web/pay/order/refund',
-        batchExport: '/api/web/pay/order/batchExport',
-        getAreaListByLevelOrParentCode: '/api/web/area/getAreaListByLevelOrParentCode',
-        getAmountInfo:'/api/web/pay/order/getAmount',
-        getSettleAmount:'/api/web/pay/order/getSettleAmount',
-        cancel: '/api/web/pay/order/cancel',
-        merchantTradeList:'/api/web/pay/order/merchantTradeList',
+        list:'/api/web/trade/list',
+        add:'/api/web/trade/add',
+        settle:'/api/web/trade/settle',
+        getAmount:'/api/web/trade/getAmount',
+        getAmountByTime:'/api/web/trade/getAmountByTime'
     },
     recharge:{
         list:'/api/web/recharge/list',

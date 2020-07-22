@@ -19,6 +19,7 @@ module.exports = {
     publicPath:'/',
     productionSourceMap: process.env.NODE_ENV === 'production' ? false : true,
     devServer: {
+        disableHostCheck: true,
         port: 8085,
         before:(app, server)=> {
             app.get(/.*.(js)$/, (req, res, next) => {

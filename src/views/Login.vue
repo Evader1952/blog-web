@@ -9,6 +9,11 @@
                 <FormItem label="密码" prop="pwd">
                     <Input type="password" v-model="user.pwd" placeholder="输入账号密码..."/>
                 </FormItem>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
+                <br/>
                 <FormItem>
                     <Button type="primary" @click="commitLogin('user')" @keyup.enter="commitLogin('user')" id="login">登录</Button>
                 </FormItem>

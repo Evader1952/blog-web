@@ -11,35 +11,20 @@ export async function batchExport(params){
     return result.data;
 }
 
+export async function add(params){
+    const result = await axios.post(api.trade.add,params);
+    return result.data;
+}
 export async function settle(params){
     const result = await axios.post(api.trade.settle,params);
     return result.data;
 }
 
-export async function refund(params){
-    const result = await axios.post(api.trade.refund,params);
+export async function getAmount(params){
+    const result = await axios.post(api.trade.getAmount,params);
     return result.data;
 }
-
-export async function getAreaListByLevelOrParentCode(params){
-    const result = await axios.post(api.trade.getAreaListByLevelOrParentCode,params);
-    return result.data;
-}
-
-export async function getAmountInfo(params){
-    const result = await axios.post(api.trade.getAmountInfo,params);
-    return result.data;
-}
-
-export async function getSettleAmount(params){
-    const result = await axios.post(api.trade.getSettleAmount,params);
-    return result.data;
-}
-export async function cancel(params){
-    const result = await axios.post(api.trade.cancel,params);
-    return result.data;
-}
-export async function merchantTradeList(params){
-    const result = await axios.post(api.trade.merchantTradeList,params);
+export async function getAmountByTime(params){
+    const result = await axios.post(api.trade.getAmountByTime,params);
     return result.data;
 }
